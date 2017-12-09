@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Typro</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script>
+            var video, canvas, ctx;
+            var constraints = { 
+                video: {
+                    width: 100,
+                    height: 100
+                }};
+            navigator.mediaDevices.getUserMedia(constraints)
+            .then( function(mediaStream) {
+                video = document.querySelector("video");
+                video.srcObject = mediaStream;
+                video.onloadedmetadata = function(e) {
+                    video.play();
+                };
+                takePicture();
+            })
+            .catch(
+                function(err) {
+                    console.log(err.name + ":" + err.message);
+            });
+        </script>
+    </head>
+    <body>
+        <video></video>
+        <canvas style="display: none;" width="160" height="120"></canvas>
+        </br>
+        </br>
+        <input type="text" style="width: 600px" id="typingBox">
+        <p id="typeThis">The place is like a museum. It's very beautiful and very cold and you're not allowed to touch anything.</p>
+        <p id="keyPressed"></p>
+        <script>
+            var image, imgreconstruct, start;
+            var video = document.querySelector("video");
+            function takePicture() {
+                canvas = document.querySelector("canvas");
+                ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                image = canvas.toDataURL();
+                imgreconstruct = image.replace("data:image/png;base64,", "");
+                analyzeImage();
+            }
+
+            function analyzeImage() {
+                $.post("https://api-us.faceplusplus.com/facepp/v3/detect",
+                {
+                    api_key: "BjxRd7fHNzivyqGLUC-2d98Xnf2vWRy4",
+                    api_secret: "h__Ob81u2Pn9fMQXao-or96YIBkcD83X",
+                    image_base64: imgreconstruct.toString(),
+                    return_attributes: "headpose"
+                },
+                function(data){
+                    console.log("Pitch: " + data.faces[0].attributes.headpose.pitch_angle);
+                    if (data.faces[0].attributes.headpose.pitch_angle > 4) {
+                        var audio = new Audio('sound.mp3');
+                        audio.play();
+                    };
+                });
+                setTimeout(takePicture, 2000);
+            };
+        </script>
+    </body>
+</html>
